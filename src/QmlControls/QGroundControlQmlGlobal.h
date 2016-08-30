@@ -19,7 +19,6 @@
 #include "LinkManager.h"
 #include "HomePositionManager.h"
 #include "FlightMapSettings.h"
-#include "MissionCommands.h"
 #include "SettingsFact.h"
 #include "FactMetaData.h"
 #include "SimulatedPosition.h"
@@ -61,6 +60,13 @@ public:
         SpeedUnitsKnots,
     };
 
+    enum MavlinkVersionSend {
+        MavlinkVersionAlways1 = 0,
+        MavlinkVersion2IfVehicle2,
+        MavlinkVersionAlways2,
+    };
+
+
     Q_ENUMS(DistanceUnits)
     Q_ENUMS(AreaUnits)
     Q_ENUMS(SpeedUnits)
@@ -68,10 +74,11 @@ public:
     Q_PROPERTY(FlightMapSettings*   flightMapSettings   READ flightMapSettings      CONSTANT)
     Q_PROPERTY(HomePositionManager* homePositionManager READ homePositionManager    CONSTANT)
     Q_PROPERTY(LinkManager*         linkManager         READ linkManager            CONSTANT)
-    Q_PROPERTY(MissionCommands*     missionCommands     READ missionCommands        CONSTANT)
     Q_PROPERTY(MultiVehicleManager* multiVehicleManager READ multiVehicleManager    CONSTANT)
     Q_PROPERTY(QGCMapEngineManager* mapEngineManager    READ mapEngineManager       CONSTANT)
     Q_PROPERTY(QGCPositionManager*  qgcPositionManger   READ qgcPositionManger      CONSTANT)
+    Q_PROPERTY(MissionCommandTree*  missionCommandTree  READ missionCommandTree     CONSTANT)
+    Q_PROPERTY(VideoManager*        videoManager        READ videoManager           CONSTANT)
 
     Q_PROPERTY(qreal                zOrderTopMost       READ zOrderTopMost          CONSTANT) ///< z order for top most items, toolbar, main window sub view
     Q_PROPERTY(qreal                zOrderWidgets       READ zOrderWidgets          CONSTANT) ///< z order value to widgets, for example: zoom controls, hud widgetss
@@ -88,16 +95,17 @@ public:
 
     // MavLink Protocol
     Q_PROPERTY(bool     isMultiplexingEnabled   READ isMultiplexingEnabled      WRITE setIsMultiplexingEnabled      NOTIFY isMultiplexingEnabledChanged)
-    Q_PROPERTY(bool     isVersionCheckEnabled   READ isVersionCheckEnabled      WRITE setIsVersionCheckEnabled      NOTIFY isVersionCheckEnabledChanged)
     Q_PROPERTY(int      mavlinkSystemID         READ mavlinkSystemID            WRITE setMavlinkSystemID            NOTIFY mavlinkSystemIDChanged)
+    Q_PROPERTY(Fact*    mavlinkVersion                  READ mavlinkVersion                     CONSTANT)
 
-    Q_PROPERTY(Fact*    offlineEditingFirmwareType  READ offlineEditingFirmwareType CONSTANT)
-    Q_PROPERTY(Fact*    offlineEditingVehicleType   READ offlineEditingVehicleType  CONSTANT)
-    Q_PROPERTY(Fact*    offlineEditingCruiseSpeed   READ offlineEditingCruiseSpeed  CONSTANT)
-    Q_PROPERTY(Fact*    offlineEditingHoverSpeed    READ offlineEditingHoverSpeed   CONSTANT)
-    Q_PROPERTY(Fact*    distanceUnits               READ distanceUnits              CONSTANT)
-    Q_PROPERTY(Fact*    areaUnits                   READ areaUnits                  CONSTANT)
-    Q_PROPERTY(Fact*    speedUnits                  READ speedUnits                 CONSTANT)
+    Q_PROPERTY(Fact*    offlineEditingFirmwareType      READ offlineEditingFirmwareType         CONSTANT)
+    Q_PROPERTY(Fact*    offlineEditingVehicleType       READ offlineEditingVehicleType          CONSTANT)
+    Q_PROPERTY(Fact*    offlineEditingCruiseSpeed       READ offlineEditingCruiseSpeed          CONSTANT)
+    Q_PROPERTY(Fact*    offlineEditingHoverSpeed        READ offlineEditingHoverSpeed           CONSTANT)
+    Q_PROPERTY(Fact*    distanceUnits                   READ distanceUnits                      CONSTANT)
+    Q_PROPERTY(Fact*    areaUnits                       READ areaUnits                          CONSTANT)
+    Q_PROPERTY(Fact*    speedUnits                      READ speedUnits                         CONSTANT)
+    Q_PROPERTY(Fact*    batteryPercentRemainingAnnounce READ batteryPercentRemainingAnnounce    CONSTANT)
 
     Q_PROPERTY(QGeoCoordinate lastKnownHomePosition READ lastKnownHomePosition  CONSTANT)
     Q_PROPERTY(QGeoCoordinate flightMapPosition     MEMBER _flightMapPosition   NOTIFY flightMapPositionChanged)
@@ -161,10 +169,11 @@ public:
     FlightMapSettings*      flightMapSettings   ()      { return _flightMapSettings; }
     HomePositionManager*    homePositionManager ()      { return _homePositionManager; }
     LinkManager*            linkManager         ()      { return _linkManager; }
-    MissionCommands*        missionCommands     ()      { return _missionCommands; }
     MultiVehicleManager*    multiVehicleManager ()      { return _multiVehicleManager; }
     QGCMapEngineManager*    mapEngineManager    ()      { return _mapEngineManager; }
     QGCPositionManager*     qgcPositionManger   ()      { return _qgcPositionManager; }
+    MissionCommandTree*     missionCommandTree  ()      { return _missionCommandTree; }
+    VideoManager*           videoManager        ()      { return _videoManager; }
 
     qreal                   zOrderTopMost       ()      { return 1000; }
     qreal                   zOrderWidgets       ()      { return 100; }
@@ -178,18 +187,19 @@ public:
     qreal   baseFontPointSize       () { return _baseFontPointSize; }
 
     bool    isMultiplexingEnabled   () { return _toolbox->mavlinkProtocol()->multiplexingEnabled(); }
-    bool    isVersionCheckEnabled   () { return _toolbox->mavlinkProtocol()->versionCheckEnabled(); }
     int     mavlinkSystemID         () { return _toolbox->mavlinkProtocol()->getSystemId(); }
 
     QGeoCoordinate lastKnownHomePosition() { return qgcApp()->lastKnownHomePosition(); }
 
-    static Fact* offlineEditingFirmwareType (void);
-    static Fact* offlineEditingVehicleType  (void);
-    static Fact* offlineEditingCruiseSpeed  (void);
-    static Fact* offlineEditingHoverSpeed   (void);
-    static Fact* distanceUnits              (void);
-    static Fact* areaUnits                  (void);
-    static Fact* speedUnits                 (void);
+    static Fact* offlineEditingFirmwareType     (void);
+    static Fact* offlineEditingVehicleType      (void);
+    static Fact* offlineEditingCruiseSpeed      (void);
+    static Fact* offlineEditingHoverSpeed       (void);
+    static Fact* distanceUnits                  (void);
+    static Fact* areaUnits                      (void);
+    static Fact* speedUnits                     (void);
+    static Fact* batteryPercentRemainingAnnounce(void);
+    static Fact* mavlinkVersion                 (void);
 
     //-- TODO: Make this into an actual preference.
     bool    isAdvancedMode          () { return false; }
@@ -202,7 +212,6 @@ public:
     void    setBaseFontPointSize        (qreal size);
 
     void    setIsMultiplexingEnabled    (bool enable);
-    void    setIsVersionCheckEnabled    (bool enable);
     void    setMavlinkSystemID          (int  id);
 
     QString parameterFileExtension(void) const  { return QGCApplication::parameterFileExtension; }
@@ -220,7 +229,6 @@ signals:
     void virtualTabletJoystickChanged   (bool enabled);
     void baseFontPointSizeChanged       (qreal size);
     void isMultiplexingEnabledChanged   (bool enabled);
-    void isVersionCheckEnabledChanged   (bool enabled);
     void mavlinkSystemIDChanged         (int id);
     void flightMapPositionChanged       (QGeoCoordinate flightMapPosition);
     void flightMapZoomChanged           (double flightMapZoom);
@@ -229,10 +237,11 @@ private:
     FlightMapSettings*      _flightMapSettings;
     HomePositionManager*    _homePositionManager;
     LinkManager*            _linkManager;
-    MissionCommands*        _missionCommands;
     MultiVehicleManager*    _multiVehicleManager;
     QGCMapEngineManager*    _mapEngineManager;
     QGCPositionManager*     _qgcPositionManager;
+    MissionCommandTree*     _missionCommandTree;
+    VideoManager*           _videoManager;
 
     bool                    _virtualTabletJoystick;
     qreal                   _baseFontPointSize;
@@ -252,6 +261,10 @@ private:
     static FactMetaData*    _areaUnitsMetaData;
     static SettingsFact*    _speedUnitsFact;
     static FactMetaData*    _speedUnitsMetaData;
+    static SettingsFact*    _batteryPercentRemainingAnnounceFact;
+    static FactMetaData*    _batteryPercentRemainingAnnounceMetaData;
+    static SettingsFact*    _mavlinkVersionFact;
+    static FactMetaData*    _mavlinkVersionMetaData;
 
     static const char*  _virtualTabletJoystickKey;
     static const char*  _baseFontPointSizeKey;
