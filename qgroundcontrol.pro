@@ -49,10 +49,10 @@ contains (DEFINES, QGC_DISABLE_BLUETOOTH) {
 # USB Camera and UVC Video Sources
 contains (DEFINES, QGC_DISABLE_UVC) {
     message("Skipping support for UVC devices (manual override from command line)")
-    DEFINES -= QGC_DISABLE_UVC
+    DEFINES += QGC_DISABLE_UVC
 } else:exists(user_config.pri):infile(user_config.pri, DEFINES, QGC_DISABLE_UVC) {
     message("Skipping support for UVC devices (manual override from user_config.pri)")
-    DEFINES -= QGC_DISABLE_UVC
+    DEFINES += QGC_DISABLE_UVC
 }
 
 LinuxBuild {
@@ -87,8 +87,13 @@ QT += \
     sql \
     svg \
     widgets \
-    xml \
-    multimedia
+    xml
+
+# Multimedia only used if QVC is enabled
+!contains (DEFINES, QGC_DISABLE_UVC) {
+    QT += \
+        multimedia
+}
 
 !MobileBuild {
 QT += \
@@ -241,7 +246,6 @@ FORMS += \
     src/ui/uas/UASMessageView.ui \
     src/ui/Linechart.ui \
     src/ui/MultiVehicleDockWidget.ui \
-    src/ui/MAVLinkSettingsWidget.ui \
     src/ui/QGCDataPlot2D.ui \
     src/ui/QGCHilConfiguration.ui \
     src/ui/QGCHilFlightGearConfiguration.ui \
@@ -378,7 +382,6 @@ HEADERS += \
     src/ui/linechart/ScrollZoomer.h \
     src/ui/MainWindow.h \
     src/ui/MAVLinkDecoder.h \
-    src/ui/MAVLinkSettingsWidget.h \
     src/ui/MultiVehicleDockWidget.h \
     src/ui/QGCMAVLinkLogPlayer.h \
     src/ui/QGCMapRCToParamDialog.h \
@@ -515,7 +518,6 @@ SOURCES += \
     src/uas/FileManager.cc \
     src/ui/uas/QGCUnconnectedInfoWidget.cc \
     src/ui/MAVLinkDecoder.cc \
-    src/ui/MAVLinkSettingsWidget.cc \
     src/ui/QGCMapRCToParamDialog.cpp \
     src/comm/LogReplayLink.cc \
     src/QGCFileDialog.cc \
@@ -687,6 +689,7 @@ HEADERS+= \
     src/FirmwarePlugin/FirmwarePluginManager.h \
     src/FirmwarePlugin/FirmwarePlugin.h \
     src/FirmwarePlugin/APM/APMFirmwarePlugin.h \
+    src/FirmwarePlugin/APM/APMGeoFenceManager.h \
     src/FirmwarePlugin/APM/APMParameterMetaData.h \
     src/FirmwarePlugin/APM/ArduCopterFirmwarePlugin.h \
     src/FirmwarePlugin/APM/ArduPlaneFirmwarePlugin.h \
@@ -694,6 +697,7 @@ HEADERS+= \
     src/FirmwarePlugin/APM/ArduSubFirmwarePlugin.h \
     src/FirmwarePlugin/PX4/px4_custom_mode.h \
     src/FirmwarePlugin/PX4/PX4FirmwarePlugin.h \
+    src/FirmwarePlugin/PX4/PX4GeoFenceManager.h \
     src/FirmwarePlugin/PX4/PX4ParameterMetaData.h \
     src/Vehicle/MultiVehicleManager.h \
     src/Vehicle/Vehicle.h \
@@ -746,6 +750,7 @@ SOURCES += \
     src/AutoPilotPlugins/PX4/SensorsComponentController.cc \
     src/AutoPilotPlugins/PX4/PX4TuningComponent.cc \
     src/FirmwarePlugin/APM/APMFirmwarePlugin.cc \
+    src/FirmwarePlugin/APM/APMGeoFenceManager.cc \
     src/FirmwarePlugin/APM/APMParameterMetaData.cc \
     src/FirmwarePlugin/APM/ArduCopterFirmwarePlugin.cc \
     src/FirmwarePlugin/APM/ArduPlaneFirmwarePlugin.cc \
@@ -754,6 +759,7 @@ SOURCES += \
     src/FirmwarePlugin/FirmwarePlugin.cc \
     src/FirmwarePlugin/FirmwarePluginManager.cc \
     src/FirmwarePlugin/PX4/PX4FirmwarePlugin.cc \
+    src/FirmwarePlugin/PX4/PX4GeoFenceManager.cc \
     src/FirmwarePlugin/PX4/PX4ParameterMetaData.cc \
     src/Vehicle/MultiVehicleManager.cc \
     src/Vehicle/Vehicle.cc \
